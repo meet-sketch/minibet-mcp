@@ -153,15 +153,15 @@ export async function getDepositSummary(input: DepositSummaryInput) {
     organization_id: ORG_ID,
     ...dateWhere,
   };
-  if (input.currency) baseWhere.currency = input.currency;
-  if (input.status)   baseWhere.status   = input.status;
+  if (input.target_currency) baseWhere.target_currency = input.target_currency;
+  if (input.status)          baseWhere.status           = input.status;
 
   const groupBy =
-    input.group_by === "deposit_method" ? ["deposit_method"] :
-    input.group_by === "source"         ? ["source"] :
-    input.group_by === "status"         ? ["status"] :
-    input.group_by === "currency"       ? ["currency"] :
-    ["status", "currency"];
+    input.group_by === "deposit_method"          ? ["deposit_method"] :
+    input.group_by === "source"                  ? ["source"] :
+    input.group_by === "status"                  ? ["status"] :
+    input.group_by === "target_currency"         ? ["target_currency"] :
+    ["status", "target_currency"];
 
   const [rows, totalCount] = await Promise.all([
     prismaClient.deposit.groupBy({
@@ -206,8 +206,8 @@ export async function getDepositTimeseries(input: DepositTimeseriesInput) {
     organization_id: ORG_ID,
     ...dateWhere,
   };
-  if (input.currency) where.currency = input.currency;
-  if (input.status)   where.status   = input.status;
+  if (input.target_currency) where.target_currency = input.target_currency;
+  if (input.status)          where.status           = input.status;
 
   // Use raw SQL for time bucketing — Prisma groupBy does not support date_trunc.
   // Prisma.raw() injects the granularity as a SQL literal (required by date_trunc).
@@ -223,7 +223,7 @@ export async function getDepositTimeseries(input: DepositTimeseriesInput) {
     from       ? Prisma.sql`AND created_at >= ${from}` :
     to         ? Prisma.sql`AND created_at <= ${to}` :
                  Prisma.sql``;
-  const currencyFilter = input.currency ? Prisma.sql`AND currency = ${input.currency}` : Prisma.sql``;
+  const currencyFilter = input.target_currency ? Prisma.sql`AND target_currency = ${input.target_currency}` : Prisma.sql``;
   const statusFilter   = input.status   ? Prisma.sql`AND status   = ${input.status}`   : Prisma.sql``;
 
   const rows = await prismaClient.$queryRaw<Array<{ bucket: Date; count: bigint; total: string }>>`
@@ -298,7 +298,7 @@ export async function getDepositComparison(input: DepositComparisonInput) {
 
   const makeWhere = (range: { from: Date | null; to: Date | null }) => {
     const w: Record<string, unknown> = { organization_id: ORG_ID, ...buildDateWhere(range.from, range.to) };
-    if (input.currency) w.currency = input.currency;
+    if (input.target_currency) w.target_currency = input.target_currency;
     return w;
   };
 
@@ -404,8 +404,8 @@ export async function getDepositsByUser(input: DepositUserLookupInput) {
     organization_id: ORG_ID,
     account_id,
   };
-  if (input.status)   where.status   = input.status;
-  if (input.currency) where.currency = input.currency;
+  if (input.status)          where.status           = input.status;
+  if (input.target_currency) where.target_currency  = input.target_currency;
   if (input.from_date || input.to_date) {
     const from = input.from_date ? new Date(`${input.from_date}T00:00:00.000Z`) : null;
     const to   = input.to_date   ? new Date(`${input.to_date}T23:59:59.999Z`)   : null;
@@ -457,8 +457,8 @@ export async function getDepositFunnel(input: DepositFunnelInput) {
     organization_id: ORG_ID,
     ...buildDateWhere(from, to),
   };
-  if (input.currency)       where.currency       = input.currency;
-  if (input.deposit_method) where.deposit_method = input.deposit_method;
+  if (input.target_currency) where.target_currency = input.target_currency;
+  if (input.deposit_method)  where.deposit_method  = input.deposit_method;
 
   const rows = await prismaClient.deposit.groupBy({
     by: ["status"],
@@ -507,8 +507,8 @@ export async function getTopDepositors(input: TopDepositorsInput) {
     organization_id: ORG_ID,
     ...buildDateWhere(from, to),
   };
-  if (input.currency) where.currency = input.currency;
-  if (input.status)   where.status   = input.status;
+  if (input.target_currency) where.target_currency = input.target_currency;
+  if (input.status)          where.status          = input.status;
 
   const rows = await prismaClient.deposit.groupBy({
     by: ["account_id"],
@@ -540,8 +540,8 @@ export async function getDepositMethodBreakdown(input: DepositMethodBreakdownInp
     organization_id: ORG_ID,
     ...buildDateWhere(from, to),
   };
-  if (input.currency) where.currency = input.currency;
-  if (input.status)   where.status   = input.status;
+  if (input.target_currency) where.target_currency = input.target_currency;
+  if (input.status)          where.status          = input.status;
 
   const [rows, total] = await Promise.all([
     prismaClient.deposit.groupBy({

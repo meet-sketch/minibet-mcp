@@ -56,14 +56,14 @@ export type DateRange = z.infer<typeof DateRangeSchema>;
 
 // ---------------------------------------------------------------------------
 // Tool 1: Aggregated summary
-// Answers: total deposits, revenue, counts grouped by status/currency/method
+// Answers: total deposits, revenue, counts grouped by status/target_currency/method
 // No row limit — uses COUNT/SUM at DB level
 // ---------------------------------------------------------------------------
 export const DepositSummarySchema = DateRangeSchema.extend({
-  currency: z
+  target_currency: z
     .string()
     .optional()
-    .describe("Filter by a specific currency code (e.g. USD, EUR, BTC). Omit for all currencies."),
+    .describe("Filter by target currency (e.g. SATS, USDT, USDC). Omit for all currencies."),
 
   status: z
     .enum(["pending", "completed", "failed", "cancelled", "expired", "paid"])
@@ -71,12 +71,12 @@ export const DepositSummarySchema = DateRangeSchema.extend({
     .describe("Filter by a specific deposit status. Omit to include all statuses."),
 
   group_by: z
-    .enum(["status", "currency", "status_and_currency", "deposit_method", "source"])
+    .enum(["status", "target_currency", "status_and_target_currency", "deposit_method", "source"])
     .optional()
-    .default("status_and_currency")
+    .default("status_and_target_currency")
     .describe(
       "How to break down the aggregation. " +
-      "'status_and_currency' (default) groups by both. " +
+      "'status_and_target_currency' (default) groups by both. " +
       "'deposit_method' groups by payment method. " +
       "'source' groups by deposit source/provider.",
     ),
@@ -100,10 +100,10 @@ export const DepositTimeseriesSchema = DateRangeSchema.extend({
       "Use 'week' or 'month' for quarterly/yearly ranges.",
     ),
 
-  currency: z
+  target_currency: z
     .string()
     .optional()
-    .describe("Filter by currency. Omit to aggregate all currencies."),
+    .describe("Filter by target currency (e.g. SATS, USDT, USDC). Omit to aggregate all."),
 
   status: z
     .enum(["pending", "completed", "failed", "cancelled", "expired", "paid"])
@@ -154,10 +154,10 @@ export const DepositComparisonSchema = z.object({
     .optional()
     .describe("End date of second period YYYY-MM-DD."),
 
-  currency: z
+  target_currency: z
     .string()
     .optional()
-    .describe("Filter both periods by currency."),
+    .describe("Filter both periods by target currency (e.g. SATS, USDT, USDC)."),
 });
 
 // ---------------------------------------------------------------------------
@@ -192,10 +192,10 @@ export const DepositUserLookupSchema = z.object({
     .optional()
     .describe("Filter by deposit status."),
 
-  currency: z
+  target_currency: z
     .string()
     .optional()
-    .describe("Filter by currency."),
+    .describe("Filter by target currency (e.g. SATS, USDT, USDC)."),
 
   from_date: z
     .string()
@@ -227,10 +227,10 @@ export const DepositUserLookupSchema = z.object({
 // No row limit — pure aggregation
 // ---------------------------------------------------------------------------
 export const DepositFunnelSchema = DateRangeSchema.extend({
-  currency: z
+  target_currency: z
     .string()
     .optional()
-    .describe("Filter by currency."),
+    .describe("Filter by target currency (e.g. SATS, USDT, USDC)."),
 
   deposit_method: z
     .string()
@@ -243,10 +243,10 @@ export const DepositFunnelSchema = DateRangeSchema.extend({
 // Answers: who are the biggest depositors, VIP identification
 // ---------------------------------------------------------------------------
 export const TopDepositorsSchema = DateRangeSchema.extend({
-  currency: z
+  target_currency: z
     .string()
     .optional()
-    .describe("Filter by currency."),
+    .describe("Filter by target currency (e.g. SATS, USDT, USDC)."),
 
   status: z
     .enum(["pending", "completed", "failed", "cancelled", "expired", "paid"])
@@ -263,10 +263,10 @@ export const TopDepositorsSchema = DateRangeSchema.extend({
 // Answers: which payment methods are most popular, method revenue share
 // ---------------------------------------------------------------------------
 export const DepositMethodBreakdownSchema = DateRangeSchema.extend({
-  currency: z
+  target_currency: z
     .string()
     .optional()
-    .describe("Filter by currency."),
+    .describe("Filter by target currency (e.g. SATS, USDT, USDC)."),
 
   status: z
     .enum(["pending", "completed", "failed", "cancelled", "expired", "paid"])
