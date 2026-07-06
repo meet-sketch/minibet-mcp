@@ -1,0 +1,499 @@
+generator client {
+    provider = "prisma-client-js"
+    output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model tbl_accounts {
+    airbyte_raw_id        String    @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime  @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json      @map("_airbyte_meta")
+    airbyte_generation_id BigInt    @map("_airbyte_generation_id")
+    id                    String    @id @default(uuid()) @db.Char(36)
+    user_id               String?   @db.VarChar
+    created_at            DateTime? @db.Timestamp(6)
+    updated_at            DateTime? @db.Timestamp(6)
+    affiliate_code        String?   @db.VarChar
+    plan_config_id        String?   @db.VarChar
+    organization_id       String?   @db.VarChar
+
+    @@index([updated_at], map: "idx_cursor_tbl_accounts")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_accounts")
+    @@index([id], map: "idx_pk_tbl_accounts")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_currencies {
+    airbyte_raw_id        String    @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime  @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json      @map("_airbyte_meta")
+    airbyte_generation_id BigInt    @map("_airbyte_generation_id")
+    id                    Int       @id @default(autoincrement())
+    status                String?   @db.VarChar
+    currency              String?   @db.VarChar
+    created_at            DateTime? @db.Timestamp(6)
+    updated_at            DateTime? @db.Timestamp(6)
+    organization_id       String?   @db.VarChar
+
+    @@index([updated_at], map: "idx_cursor_tbl_currencies")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_currencies")
+    @@index([id], map: "idx_pk_tbl_currencies")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_game_events {
+    airbyte_raw_id        String?   @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime? @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json?     @map("_airbyte_meta")
+    airbyte_generation_id BigInt?   @map("_airbyte_generation_id")
+    id                    String    @id @default(uuid()) @db.Char(36)
+    type                  String?   @db.VarChar
+    tx_id                 String?   @db.VarChar
+    amount                Decimal?  @db.Decimal
+    bet_id                String?   @db.VarChar
+    bonus_id              String?   @db.VarChar
+    currency              String?   @db.VarChar
+    provider              String?   @db.VarChar
+    round_id              String?   @db.VarChar
+    action_id             String?   @db.VarChar
+    account_id            String?   @db.VarChar
+    balance_id            String?   @db.VarChar
+    created_at            DateTime? @db.Timestamptz(6)
+    session_id            String?   @db.VarChar
+    updated_at            DateTime? @db.Timestamptz(6)
+    game_org_id           String?   @db.VarChar
+    round_closed          Boolean?
+    exchange_rate         Decimal?  @db.Decimal
+    provider_action       String?   @db.VarChar
+    target_currency       String?   @db.VarChar
+    converted_amount      Decimal?  @db.Decimal
+
+    @@index([updated_at], map: "idx_cursor_tbl_game_events")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_game_events")
+    @@index([id], map: "idx_pk_tbl_game_events")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_game_organization_mapping {
+    airbyte_raw_id        String    @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime  @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json      @map("_airbyte_meta")
+    airbyte_generation_id BigInt    @map("_airbyte_generation_id")
+    id                    String    @id @default(uuid()) @db.Char(36)
+    status                String?   @db.VarChar
+    game_id               String?   @db.VarChar
+    created_at            DateTime? @db.Timestamp(6)
+    updated_at            DateTime? @db.Timestamp(6)
+    organization_id       String?   @db.VarChar
+
+    @@index([updated_at], map: "idx_cursor_tbl_game_organization_mapping")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_game_organization_mapping")
+    @@index([id], map: "idx_pk_tbl_game_organization_mapping")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_game_providers {
+    airbyte_raw_id        String    @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime  @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json      @map("_airbyte_meta")
+    airbyte_generation_id BigInt    @map("_airbyte_generation_id")
+    id                    String    @id @default(uuid()) @db.Char(36)
+    name                  String?   @db.VarChar
+    slug                  String?   @db.VarChar
+    type                  String?   @db.VarChar
+    status                String?   @db.VarChar
+    auth_url              String?   @db.VarChar
+    game_url              String?   @db.VarChar
+    icon_url              String?   @db.VarChar
+    position              BigInt?
+    source_id             String?   @db.VarChar
+    created_at            DateTime? @db.Timestamp(6)
+    created_by            String?   @db.VarChar
+    is_premium            Boolean?
+    updated_at            DateTime? @db.Timestamp(6)
+    updated_by            String?   @db.VarChar
+    website_url           String?   @db.VarChar
+    service_name          String?   @db.VarChar
+    seo_title             String?   @db.VarChar
+    seo_keywords          String?   @db.VarChar
+    seo_description       String?   @db.VarChar
+
+    @@index([updated_at], map: "idx_cursor_tbl_game_providers")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_game_providers")
+    @@index([id], map: "idx_pk_tbl_game_providers")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_game_sessions {
+    airbyte_raw_id        String    @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime  @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json      @map("_airbyte_meta")
+    airbyte_generation_id BigInt    @map("_airbyte_generation_id")
+    id                    String    @id @default(uuid()) @db.Char(36)
+    status                String?   @db.VarChar
+    currency              String?   @db.VarChar
+    end_time              DateTime? @db.Timestamptz(6)
+    account_id            String?   @db.VarChar
+    balance_id            String?   @db.VarChar
+    created_at            DateTime? @db.Timestamptz(6)
+    start_time            DateTime? @db.Timestamptz(6)
+    updated_at            DateTime? @db.Timestamptz(6)
+    device_type           String?   @db.VarChar
+    game_org_id           String?   @db.VarChar
+    geo_country           String?   @db.VarChar
+    geo_latitude          Decimal?  @db.Decimal
+    geo_longitude         Decimal?  @db.Decimal
+    game_session_id       String?   @db.VarChar
+    user_session_id       String?   @db.VarChar
+
+    @@index([updated_at], map: "idx_cursor_tbl_game_sessions")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_game_sessions")
+    @@index([id], map: "idx_pk_tbl_game_sessions")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_games {
+    airbyte_raw_id        String    @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime  @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json      @map("_airbyte_meta")
+    airbyte_generation_id BigInt    @map("_airbyte_generation_id")
+    id                    String    @id @default(uuid()) @db.Char(36)
+    name                  String?   @db.VarChar
+    slug                  String?   @db.VarChar
+    status                String?   @db.VarChar
+    icon_url              String?   @db.VarChar
+    brand_name            String?   @db.VarChar
+    created_at            DateTime? @db.Timestamp(6)
+    created_by            String?   @db.VarChar
+    updated_at            DateTime? @db.Timestamp(6)
+    updated_by            String?   @db.VarChar
+    provider_id           String?   @db.VarChar
+    feature_image_v1      String?   @db.VarChar
+    provider_game_id      String?   @db.VarChar
+    seo_title             String?   @db.VarChar
+    seo_keywords          String?   @db.VarChar
+    seo_description       String?   @db.VarChar
+
+    @@index([updated_at], map: "idx_cursor_tbl_games")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_games")
+    @@index([id], map: "idx_pk_tbl_games")
+}
+
+/// This table has subclasses and requires additional setup for migrations. Visit https://pris.ly/d/table-inheritance for more info.
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_transactions {
+    airbyte_raw_id        String?   @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime? @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json?     @map("_airbyte_meta")
+    airbyte_generation_id BigInt?   @map("_airbyte_generation_id")
+    id                    String    @id @default(uuid()) @db.Char(36)
+    note                  String?   @db.VarChar
+    amount                Decimal?  @db.Decimal
+    game_id               String?   @db.VarChar
+    currency              String?   @db.VarChar
+    currency_id           Int?
+    source_id             String?   @db.VarChar
+    account_id            String?   @db.VarChar
+    created_at            DateTime  @db.Timestamp(6)
+    exchange_rate         Decimal?  @db.Decimal
+    closing_balance       Decimal?  @db.Decimal
+    created_at_date       DateTime? @db.Date
+    organization_id       String?   @db.VarChar
+    transaction_code      Int?
+    transaction_type      String?   @db.VarChar
+    transaction_code_id   Int?
+    usd_amount            Decimal?  @db.Decimal
+
+    @@unique([id, created_at], map: "unique_key_id_created_at")
+    @@index([created_at], map: "idx_cursor_tbl_transactions")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_transactions")
+    @@index([id], map: "idx_pk_tbl_transactions")
+    @@index([account_id, created_at(sort: Desc)], map: "idx_trans_account_created")
+    @@index([transaction_code, created_at(sort: Desc)], map: "idx_trans_code_created")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_user {
+    airbyte_raw_id        String    @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime  @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json      @map("_airbyte_meta")
+    airbyte_generation_id BigInt    @map("_airbyte_generation_id")
+    id                    String    @id @default(uuid()) @db.Char(36)
+    email                 String?   @db.VarChar
+    status                String?   @db.VarChar
+    role_id               BigInt?
+    password              String?   @db.VarChar
+    username              String?   @db.VarChar
+    google_id             String?   @db.VarChar
+    avatar_url            String?   @db.VarChar
+    country_id            BigInt?
+    created_at            DateTime? @db.Timestamp(6)
+    last_login            DateTime? @db.Timestamp(6)
+    updated_at            DateTime? @db.Timestamp(6)
+    date_of_birth         DateTime? @db.Date
+    signup_method         String?   @db.VarChar
+    token_version         BigInt?
+    organization_id       String?   @db.VarChar
+    is_marketing_opt      Boolean?
+    is_email_verified     Boolean?
+    registration_source   String?   @db.VarChar
+
+    @@index([updated_at], map: "idx_cursor_tbl_user")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_user")
+    @@index([id], map: "idx_pk_tbl_user")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_sport_bet {
+    airbyte_raw_id        String    @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime  @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json      @map("_airbyte_meta")
+    airbyte_generation_id BigInt    @map("_airbyte_generation_id")
+    id                    String    @id @default(uuid()) @db.Char(36)
+    status                String?   @db.VarChar
+    bet_odds              Decimal?  @db.Decimal
+    win_odds              Decimal?  @db.Decimal
+    account_id            String?   @db.VarChar
+    created_at            DateTime? @db.Timestamp(6)
+    updated_at            DateTime? @db.Timestamp(6)
+    market_name           String?   @db.VarChar
+    sport_event_id        String?   @db.VarChar
+    sport_match_id        String?   @db.VarChar
+    organization_id       String?   @db.VarChar
+    user_prediction       String?   @db.VarChar
+    sport_session_id      String?   @db.VarChar
+    provider_betslip_id   String?   @db.VarChar
+
+    @@index([updated_at], map: "idx_cursor_tbl_sport_bet")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_sport_bet")
+    @@index([id], map: "idx_pk_tbl_sport_bet")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_sport_events {
+    airbyte_raw_id        String    @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime  @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json      @map("_airbyte_meta")
+    airbyte_generation_id BigInt    @map("_airbyte_generation_id")
+    id                    String    @id @default(uuid()) @db.Char(36)
+    type                  String?   @db.VarChar
+    amount                Decimal?  @db.Decimal
+    status                String?   @db.VarChar
+    bonus_id              String?   @db.VarChar
+    currency              String?   @db.VarChar
+    sub_type              String?   @db.VarChar
+    account_id            String?   @db.VarChar
+    bonus_type            String?   @db.VarChar
+    created_at            DateTime? @db.Timestamp(6)
+    match_name            String?   @db.VarChar
+    updated_at            DateTime? @db.Timestamp(6)
+    parent_tx_id          String?   @db.VarChar
+    exchange_rate         Decimal?  @db.Decimal
+    provider_name         String?   @db.VarChar
+    target_amount         Decimal?  @db.Decimal
+    provider_tx_id        String?   @db.VarChar
+    organization_id       String?   @db.VarChar
+    target_currency       String?   @db.VarChar
+    sport_session_id      String?   @db.VarChar
+    transaction_odds      Decimal?  @db.Decimal
+    provider_betslip_id   String?   @db.VarChar
+
+    @@index([updated_at], map: "idx_cursor_tbl_sport_events")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_sport_events")
+    @@index([id], map: "idx_pk_tbl_sport_events")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tbl_sport_matches {
+    airbyte_raw_id        String    @map("_airbyte_raw_id") @db.VarChar
+    airbyte_extracted_at  DateTime  @map("_airbyte_extracted_at") @db.Timestamptz(6)
+    airbyte_meta          Json      @map("_airbyte_meta")
+    airbyte_generation_id BigInt    @map("_airbyte_generation_id")
+    id                    String    @id @default(uuid()) @db.Char(36)
+    status                String?   @db.VarChar
+    category              String?   @db.VarChar
+    created_at            DateTime? @db.Timestamp(6)
+    match_name            String?   @db.VarChar
+    sport_type            String?   @db.VarChar
+    start_time            DateTime? @db.Timestamp(6)
+    updated_at            DateTime? @db.Timestamp(6)
+    provider_name         String?   @db.VarChar
+    tournament_id         String?   @db.VarChar
+    competitor_name       String?   @db.VarChar
+    tournament_name       String?   @db.VarChar
+    provider_match_id     String?   @db.VarChar
+
+    @@index([updated_at], map: "idx_cursor_tbl_sport_matches")
+    @@index([airbyte_extracted_at], map: "idx_extracted_at_tbl_sport_matches")
+    @@index([id], map: "idx_pk_tbl_sport_matches")
+}
+
+model AffiliatedAccount {
+    id                    String    @id @default(uuid()) @db.VarChar(36)
+    organization_id       String    @db.VarChar(36)
+    account_id            String    @db.VarChar(36)
+    affiliated_account_id String    @unique @db.VarChar(36)
+    click_id              String?   @db.VarChar(255)
+    target_currency       String    @db.VarChar(20)
+    total_deposits        Decimal   @db.Decimal(32, 16)
+    ftd_at                DateTime?
+    status                String    @db.VarChar(20)
+    created_at            DateTime  @default(now())
+    updated_at            DateTime? @updatedAt
+
+    @@index([account_id, created_at])
+    @@map("tbl_affiliated_accounts")
+}
+
+model AffiliateBalance {
+    id                      String    @id @default(uuid()) @db.VarChar(36)
+    organization_id         String    @db.VarChar(36)
+    account_id              String    @db.VarChar(36)
+    target_currency         String    @db.VarChar(20)
+    total_earned_commission Decimal   @db.Decimal(32, 16)
+    available_commission    Decimal   @db.Decimal(32, 16)
+    vertical                String?   @default("casino") @db.VarChar(20)
+    category_type           String?   @db.VarChar(50)
+    created_at              DateTime  @default(now())
+    updated_at              DateTime? @updatedAt
+
+    @@unique([account_id, vertical, category_type])
+    @@map("tbl_affiliate_balances")
+}
+
+model AffiliatePayout {
+    id                    String    @id @default(uuid()) @db.VarChar(36)
+    organization_id       String    @db.VarChar(36)
+    account_id            String    @db.VarChar(36)
+    status                String    @db.VarChar(20)
+    currency              String    @db.VarChar(20)
+    target_currency       String    @db.VarChar(20)
+    amount                Decimal   @db.Decimal(32, 16)
+    target_amount         Decimal   @db.Decimal(32, 16)
+    target_amount_paid_at DateTime? @db.Timestamp(6)
+
+    exchange_rate   Decimal   @db.Decimal(32, 16)
+    vertical        String?   @default("casino") @db.VarChar(20)
+    category_type   String?   @db.VarChar(50)
+    created_at_date DateTime  @db.Date
+    created_at      DateTime  @default(now())
+    updated_at      DateTime? @updatedAt
+
+    @@map("tbl_affiliate_payouts")
+}
+
+model AffiliateCommission {
+    id                    String   @id @default(uuid())
+    organization_id       String   @db.VarChar(36)
+    game_id               String?  @db.VarChar(36)
+    account_id            String   @db.VarChar(36)
+    affiliated_account_id String   @db.VarChar(36)
+    reference_id          String   @unique @db.VarChar(36)
+    target_currency       String   @db.VarChar(20)
+    bet_amount            Decimal  @db.Decimal(32, 16)
+    win_amount            Decimal  @db.Decimal(32, 16)
+    settled_amount        Decimal  @db.Decimal(32, 16)
+    commission_amount     Decimal  @db.Decimal(32, 16)
+    commission_rate       Decimal  @db.Decimal(4, 3)
+    total_bet_count       Int      @default(0)
+    vertical              String?  @default("casino") @db.VarChar(20)
+    category_type         String?  @db.VarChar(50)
+    unsettled_bet_amount  Decimal  @default(0.00) @db.Decimal(32, 2)
+    created_at            DateTime @default(now())
+    created_at_date       DateTime @db.Date
+
+    @@index([created_at_date])
+    @@index([account_id, affiliated_account_id, commission_rate, created_at])
+    @@index([account_id, vertical, category_type, created_at_date])
+    @@index([game_id, created_at_date])
+    @@map("tbl_affiliate_commissions")
+}
+
+model AffiliateClick {
+    id                    String    @id
+    organization_id       String    @db.VarChar(36)
+    account_id            String    @db.VarChar(36)
+    affiliated_account_id String?   @db.VarChar(36)
+    ip_address            String?   @db.VarChar(20)
+    user_agent            String?   @db.VarChar(255)
+    referer_url           String?   @db.VarChar(700)
+    device                String?   @db.VarChar(20)
+    geo_country           String?   @db.VarChar(100)
+    geo_country_code      String?   @db.Char(10)
+    geo_state             String?   @db.VarChar(100)
+    geo_state_code        String?   @db.VarChar(10)
+    geo_region            String?   @db.VarChar(100)
+    geo_region_code       String?   @db.VarChar(10)
+    geo_city              String?   @db.VarChar(100)
+    geo_city_code         String?   @db.VarChar(10)
+    geo_postal            String?   @db.VarChar(20)
+    geo_latitude          Decimal?  @db.Decimal(10, 8)
+    geo_longitude         Decimal?  @db.Decimal(11, 8)
+    converted_at          DateTime?
+    created_at            DateTime  @default(now())
+    created_at_date       DateTime  @db.Date
+    updated_at            DateTime  @updatedAt
+
+    @@map("tbl_affiliate_clicks")
+}
+
+model Deposit {
+    id                 String    @id @default(uuid())
+    account_id         String    @db.Char(36)
+    organization_id    String    @db.Char(36)
+    currency           String    @db.Char(36)
+    amount             Decimal   @db.Decimal(32, 16)
+    target_currency    String    @db.Char(36)
+    target_amount      Decimal   @db.Decimal(32, 16)
+    target_amount_paid Decimal?  @db.Decimal(32, 16)
+    amount_paid        Decimal?  @db.Decimal(32, 16)
+    exchange_rate      Decimal   @db.Decimal(32, 16)
+    source_id          String    @db.VarChar(255)
+    source             String    @db.VarChar(255)
+    status             String    @db.Char(36)
+    deposit_method     String?   @db.Char(36)
+    created_at         DateTime  @default(now())
+    created_at_date    DateTime  @db.Date
+    updated_at         DateTime? @updatedAt
+
+    @@unique([source_id])
+    @@unique([source_id, status])
+    @@index([created_at_date])
+    @@map("tbl_deposits")
+}
+
+model BetSummary {
+    id               String    @id @db.VarChar(36)
+    type             String    @db.VarChar(36)
+    provider_id      String?   @db.VarChar(36)
+    game_org_id      String?   @db.VarChar(36)
+    org_id           String?   @db.VarChar(36)
+    game_id          String?   @db.VarChar(36)
+    account_id       String    @db.VarChar(36)
+    target_currency  String?   @db.VarChar(36)
+    session_id       String?   @db.VarChar(36)
+    bonus_id         String?   @db.VarChar(100)
+    bet_id           String?   @unique @db.VarChar(36)
+    round_id         String?   @db.VarChar(100)
+    tx_id            String?   @db.VarChar(100)
+    bet_amount       Decimal?  @db.Decimal(32, 16)
+    total_win_amount Decimal?  @db.Decimal(32, 16)
+    multiplier       Decimal?  @db.Decimal(10, 2)
+    net_profit       Decimal?  @db.Decimal(32, 16)
+    outcome          String    @db.VarChar(100)
+    provider_action  String?   @db.VarChar(100)
+    bet_datetime     DateTime? @db.Timestamp(0)
+    win_datetime     DateTime? @db.Timestamp(0)
+    created_at_date  DateTime? @default(now()) @db.Date
+    created_at       DateTime? @default(now()) @db.Timestamp(0)
+    updated_at       DateTime? @default(now()) @db.Timestamp(0)
+
+    @@unique([provider_id, round_id])
+    @@index([bet_datetime])
+    @@index([account_id])
+    @@map("tbl_bet_summary")
+}
