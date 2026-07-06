@@ -65,20 +65,55 @@ export const DepositSummarySchema = DateRangeSchema.extend({
     .optional()
     .describe("Filter by target currency (e.g. SATS, USDT, USDC). Omit for all currencies."),
 
+  target_currency_in: z
+    .array(z.string())
+    .min(1)
+    .optional()
+    .describe(
+      "Filter by multiple target currencies at once (e.g. ['SATS', 'USDT']). " +
+      "Use this instead of target_currency for 'X or Y currency' questions. " +
+      "Ignored if target_currency is also set.",
+    ),
+
   status: z
     .enum(["pending", "completed", "failed", "cancelled", "expired", "paid"])
     .optional()
     .describe("Filter by a specific deposit status. Omit to include all statuses."),
 
+  status_in: z
+    .array(z.enum(["pending", "completed", "failed", "cancelled", "expired", "paid"]))
+    .min(1)
+    .optional()
+    .describe(
+      "Filter by multiple statuses at once (e.g. ['pending', 'failed']). " +
+      "Use this instead of status for 'X or Y status' questions. " +
+      "Ignored if status is also set.",
+    ),
+
+  deposit_method: z
+    .string()
+    .optional()
+    .describe("Filter by payment method (e.g. lightning, solana, onchain). Omit for all methods."),
+
   group_by: z
-    .enum(["status", "target_currency", "status_and_target_currency", "deposit_method", "source"])
+    .enum(["status", "target_currency", "status_and_target_currency", "deposit_method", "source", "account_id"])
     .optional()
     .default("status_and_target_currency")
     .describe(
       "How to break down the aggregation. " +
       "'status_and_target_currency' (default) groups by both. " +
       "'deposit_method' groups by payment method. " +
-      "'source' groups by deposit source/provider.",
+      "'source' groups by deposit source/provider. " +
+      "'account_id' groups by player account — use with a date range and prefer a narrow window, " +
+      "since this can return one row per depositing account.",
+    ),
+
+  limit: z
+    .number().int().min(1).max(500).optional()
+    .describe(
+      "Max number of breakdown rows to return, ordered by amount desc. " +
+      "Only meaningful with group_by='account_id' (which can otherwise return one row per account). " +
+      "Ignored for other group_by values.",
     ),
 });
 
@@ -158,6 +193,20 @@ export const DepositComparisonSchema = z.object({
     .string()
     .optional()
     .describe("Filter both periods by target currency (e.g. SATS, USDT, USDC)."),
+
+  deposit_method_a: z
+    .string()
+    .optional()
+    .describe(
+      "Filter period A by payment method (e.g. lightning, solana, onchain). " +
+      "Set this and deposit_method_b to different methods over the SAME period " +
+      "to compare cohorts, e.g. 'lightning vs onchain this month'.",
+    ),
+
+  deposit_method_b: z
+    .string()
+    .optional()
+    .describe("Filter period B by payment method (e.g. lightning, solana, onchain)."),
 });
 
 // ---------------------------------------------------------------------------
@@ -253,6 +302,14 @@ export const TopDepositorsSchema = DateRangeSchema.extend({
     .optional()
     .describe("Filter by status. Usually 'paid' or 'completed' for real revenue."),
 
+  deposit_method: z
+    .string()
+    .optional()
+    .describe(
+      "Filter by payment method (e.g. lightning, solana, onchain). " +
+      "Use this for questions like 'top depositors who used lightning'.",
+    ),
+
   limit: z
     .number().int().min(1).max(100).optional().default(10)
     .describe("How many top depositors to return (default 10, max 100)."),
@@ -293,12 +350,135 @@ export const DepositDetailSchema = z.object({
   { message: "Provide at least one of: deposit_id or source_id." },
 );
 
+// ---------------------------------------------------------------------------
+// Tool 9: Generic filtered deposit list — no account required
+// Answers: "all deposits over $1000 today", "all expired lightning deposits
+//          this week", "who deposited $100+ in lightning today"
+// Paginated — never silently truncates
+// ---------------------------------------------------------------------------
+export const DepositListSchema = DateRangeSchema.extend({
+  target_currency: z
+    .string()
+    .optional()
+    .describe("Filter by target currency (e.g. SATS, USDT, USDC)."),
+
+  status: z
+    .enum(["pending", "completed", "failed", "cancelled", "expired", "paid"])
+    .optional()
+    .describe("Filter by deposit status."),
+
+  deposit_method: z
+    .string()
+    .optional()
+    .describe("Filter by payment method (e.g. lightning, solana, onchain)."),
+
+  min_amount: z
+    .number()
+    .nonnegative()
+    .optional()
+    .describe("Only include deposits with amount >= this value (source currency amount)."),
+
+  max_amount: z
+    .number()
+    .nonnegative()
+    .optional()
+    .describe("Only include deposits with amount <= this value (source currency amount)."),
+
+  page: z
+    .number().int().min(1).optional().default(1)
+    .describe("Page number (default 1)."),
+
+  page_size: z
+    .number().int().min(1).max(100).optional().default(50)
+    .describe("Records per page, max 100."),
+}).refine(
+  (v) => v.min_amount === undefined || v.max_amount === undefined || v.min_amount <= v.max_amount,
+  { message: "min_amount must be less than or equal to max_amount." },
+);
+
+// ---------------------------------------------------------------------------
+// Tool 10: New vs returning depositors
+// Answers: "how many first-time depositors today vs repeat depositors",
+//          new depositor revenue vs returning depositor revenue
+// A depositor counts as "new" if their earliest deposit (any status) falls
+// inside the requested period; otherwise they are "returning".
+// ---------------------------------------------------------------------------
+export const NewVsReturningDepositorsSchema = DateRangeSchema.extend({
+  target_currency: z
+    .string()
+    .optional()
+    .describe("Filter by target currency (e.g. SATS, USDT, USDC)."),
+
+  status: z
+    .enum(["pending", "completed", "failed", "cancelled", "expired", "paid"])
+    .optional()
+    .describe("Filter by status. Usually 'paid' or 'completed' for real revenue."),
+
+  deposit_method: z
+    .string()
+    .optional()
+    .describe("Filter by payment method (e.g. lightning, solana, onchain)."),
+});
+
+// ---------------------------------------------------------------------------
+// Tool 11: Depositors by player segment (country / signup cohort)
+// Answers: "deposits from users who signed up this week", "deposit revenue
+//          by country", "deposits from players registered in the last 30 days"
+// Joins Deposit -> tbl_accounts -> tbl_user (account_id -> user_id).
+// Note: 'country' groups by the raw tbl_user.country_id — there is no
+// countries lookup table in this database, so segments are numeric IDs,
+// not country names.
+// ---------------------------------------------------------------------------
+export const DepositsBySegmentSchema = DateRangeSchema.extend({
+  target_currency: z
+    .string()
+    .optional()
+    .describe("Filter by target currency (e.g. SATS, USDT, USDC)."),
+
+  status: z
+    .enum(["pending", "completed", "failed", "cancelled", "expired", "paid"])
+    .optional()
+    .describe("Filter by status. Usually 'paid' or 'completed' for real revenue."),
+
+  deposit_method: z
+    .string()
+    .optional()
+    .describe("Filter by payment method (e.g. lightning, solana, onchain)."),
+
+  segment_by: z
+    .enum(["country", "signup_week", "signup_month"])
+    .describe(
+      "How to segment depositors. " +
+      "'country' groups by the player's tbl_user.country_id (a numeric ID — there is no " +
+      "countries lookup table, so this returns raw IDs, not country names). " +
+      "'signup_week'/'signup_month' groups by the ISO week or calendar month the player registered in.",
+    ),
+
+  signup_from_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .describe(
+      "Only include players who signed up on/after this date (YYYY-MM-DD). " +
+      "Use this for 'players who signed up this week/month' style questions.",
+    ),
+
+  signup_to_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .describe("Only include players who signed up on/before this date (YYYY-MM-DD)."),
+});
+
 // Exported types
-export type DepositSummaryInput         = z.infer<typeof DepositSummarySchema>;
-export type DepositTimeseriesInput      = z.infer<typeof DepositTimeseriesSchema>;
-export type DepositComparisonInput      = z.infer<typeof DepositComparisonSchema>;
-export type DepositUserLookupInput      = z.infer<typeof DepositUserLookupSchema>;
-export type DepositFunnelInput          = z.infer<typeof DepositFunnelSchema>;
-export type TopDepositorsInput          = z.infer<typeof TopDepositorsSchema>;
-export type DepositMethodBreakdownInput = z.infer<typeof DepositMethodBreakdownSchema>;
-export type DepositDetailInput          = z.infer<typeof DepositDetailSchema>;
+export type DepositSummaryInput              = z.infer<typeof DepositSummarySchema>;
+export type DepositTimeseriesInput           = z.infer<typeof DepositTimeseriesSchema>;
+export type DepositComparisonInput           = z.infer<typeof DepositComparisonSchema>;
+export type DepositUserLookupInput           = z.infer<typeof DepositUserLookupSchema>;
+export type DepositFunnelInput               = z.infer<typeof DepositFunnelSchema>;
+export type TopDepositorsInput               = z.infer<typeof TopDepositorsSchema>;
+export type DepositMethodBreakdownInput      = z.infer<typeof DepositMethodBreakdownSchema>;
+export type DepositDetailInput               = z.infer<typeof DepositDetailSchema>;
+export type DepositListInput                 = z.infer<typeof DepositListSchema>;
+export type NewVsReturningDepositorsInput    = z.infer<typeof NewVsReturningDepositorsSchema>;
+export type DepositsBySegmentInput           = z.infer<typeof DepositsBySegmentSchema>;

@@ -8,6 +8,9 @@ import {
   TopDepositorsSchema,
   DepositMethodBreakdownSchema,
   DepositDetailSchema,
+  DepositListSchema,
+  NewVsReturningDepositorsSchema,
+  DepositsBySegmentSchema,
 } from './schemas';
 import {
   getDepositSummary,
@@ -18,6 +21,9 @@ import {
   getTopDepositors,
   getDepositMethodBreakdown,
   getDepositDetail,
+  getDepositList,
+  getNewVsReturningDepositors,
+  getDepositsBySegment,
 } from './queries';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,8 +47,9 @@ export function registerDepositTools(server: McpServer): void {
         'Get aggregated deposit counts and amounts for any time period. ' +
         'Supports preset periods (today, this_month, last_quarter, last_year, etc.) ' +
         'AND custom date ranges (from_date + to_date). ' +
-        'Results are grouped by status and currency by default, or by deposit_method or source. ' +
-        'Use this for questions about totals, revenue, counts, breakdowns, and volume. ' +
+        'Results are grouped by status and currency by default, or by deposit_method, source, or account_id. ' +
+        'Use this for questions about totals, revenue, counts, breakdowns, and volume — ' +
+        'including per-account breakdowns (pair group_by="account_id" with a date range and limit). ' +
         'No row limit — all data is aggregated at the database level.',
       inputSchema: DepositSummarySchema.shape as AnyShape,
     },
@@ -240,6 +247,86 @@ export function registerDepositTools(server: McpServer): void {
       try {
         const parsed = DepositDetailSchema.parse(input);
         const result = await getDepositDetail(parsed);
+        return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (err) {
+        return { content: [{ type: 'text' as const, text: `Error: ${errorText(err)}` }], isError: true };
+      }
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // 9. Generic filtered deposit list — no account required
+  // Use for: "all deposits over $1000 today", "all expired lightning deposits
+  //          this week", "who deposited $100+ in lightning today"
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    'get_deposit_list',
+    {
+      description:
+        'List individual deposits matching filters, without needing a specific account. ' +
+        'Filter by amount range (min_amount/max_amount), status, deposit_method, target_currency, and date range. ' +
+        'Paginated so results are never silently truncated. ' +
+        'Use this for questions like "show all deposits over $1000 today", ' +
+        '"all expired lightning deposits this week", or "who deposited $100+ in lightning today".',
+      inputSchema: DepositListSchema.innerType().shape as AnyShape,
+    },
+    async (input: unknown) => {
+      try {
+        const parsed = DepositListSchema.parse(input);
+        const result = await getDepositList(parsed);
+        return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (err) {
+        return { content: [{ type: 'text' as const, text: `Error: ${errorText(err)}` }], isError: true };
+      }
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // 10. New vs returning depositors
+  // Use for: "how many first-time depositors today vs repeat depositors",
+  //          "new depositor revenue vs returning depositor revenue"
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    'get_new_vs_returning_depositors',
+    {
+      description:
+        'Split depositors in a time period into new (first-ever deposit falls in this period) vs returning. ' +
+        'Returns depositor counts, deposit counts, and total amounts for each group. ' +
+        'Use this for questions about first-time depositors, repeat depositors, ' +
+        'new vs returning revenue, and depositor retention.',
+      inputSchema: NewVsReturningDepositorsSchema.shape as AnyShape,
+    },
+    async (input: unknown) => {
+      try {
+        const parsed = NewVsReturningDepositorsSchema.parse(input);
+        const result = await getNewVsReturningDepositors(parsed);
+        return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
+      } catch (err) {
+        return { content: [{ type: 'text' as const, text: `Error: ${errorText(err)}` }], isError: true };
+      }
+    },
+  );
+
+  // -------------------------------------------------------------------------
+  // 11. Depositors by player segment (country / signup cohort)
+  // Use for: "deposits from users who signed up this week", "deposit revenue
+  //          by country", "deposits from players registered in the last 30 days"
+  // -------------------------------------------------------------------------
+  server.registerTool(
+    'get_deposits_by_segment',
+    {
+      description:
+        'Break down deposit revenue by player segment: country or signup cohort (week/month). ' +
+        'Joins deposits to player account data. Optionally restrict to players who signed up ' +
+        'within a specific date range via signup_from_date/signup_to_date. ' +
+        'Use this for questions like "deposits from users who signed up this week", ' +
+        '"deposit revenue by country", or "deposits from players registered in the last 30 days".',
+      inputSchema: DepositsBySegmentSchema.shape as AnyShape,
+    },
+    async (input: unknown) => {
+      try {
+        const parsed = DepositsBySegmentSchema.parse(input);
+        const result = await getDepositsBySegment(parsed);
         return { content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }] };
       } catch (err) {
         return { content: [{ type: 'text' as const, text: `Error: ${errorText(err)}` }], isError: true };
