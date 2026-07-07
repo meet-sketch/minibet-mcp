@@ -252,11 +252,11 @@ export async function getDepositTimeseries(input: DepositTimeseriesInput) {
     to         ? Prisma.sql`AND created_at <= ${to}` :
                  Prisma.sql``;
   const currencyFilter = input.target_currency ? Prisma.sql`AND target_currency = ${input.target_currency}` : Prisma.sql``;
-  const statusFilter   = input.status   ? Prisma.sql`AND status   = ${input.status}`   : Prisma.sql``;
+  const statusFilter   = input.status          ? Prisma.sql`AND status = ${input.status}`                   : Prisma.sql``;
 
-  const rows = await prismaClient.$queryRaw<Array<{ bucket: Date; count: bigint; total: string }>>`
+  const query = Prisma.sql`
     SELECT
-      date_trunc(${Prisma.raw(truncFn)}, created_at AT TIME ZONE 'UTC') AS bucket,
+      date_trunc(${Prisma.raw(`'${truncFn}'`)}, created_at AT TIME ZONE 'UTC') AS bucket,
       COUNT(id)::bigint                                                   AS count,
       COALESCE(SUM(amount), 0)::text                                      AS total
     FROM tbl_deposits
@@ -267,6 +267,8 @@ export async function getDepositTimeseries(input: DepositTimeseriesInput) {
     GROUP BY bucket
     ORDER BY bucket ASC
   `;
+
+  const rows = await prismaClient.$queryRaw<Array<{ bucket: Date; count: bigint; total: string }>>(query);
 
   return {
     granularity: gran,
